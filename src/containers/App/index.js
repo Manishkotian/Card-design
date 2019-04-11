@@ -1,12 +1,12 @@
 import React, { Component } from 'react';
-import {getSortedDateAndNumberArray} from '../../utils';
 import {Col, Button, Row} from 'react-bootstrap';
 import ModalComponent from '../Modal';
 import CardComponent from '../../components/Card';
 import NavBarComponent from '../../components/NavBar';
 import Constants from '../../constants';
 import { connect } from 'react-redux'
-import {setApiData} from '../../reducer/action';
+import {setApiData, deleteEmployeeDetails, setNewEmployeeDetails} from '../../reducer/action';
+import apiConstants from '../../constants/mockApi';
 
 class App extends Component {
 	constructor(props) {
@@ -15,38 +15,77 @@ class App extends Component {
 			isLoading: true,
 			error: null,
 			modalShow: false,
+			hoveredCard: '',
+			showDeleteSuccessMessage: false,
 		};
+		this.deleteEmployeeDetails = this.deleteEmployeeDetails.bind(this);
+		this.onSubmit = this.onSubmit.bind(this);
+		this.hoverCard = this.hoverCard.bind(this);
 	}
 
+	/* function to get mock api data
+	param: -
+	retrun: gets mock api data
+	*/
 	componentDidMount() {
-		const {endPointApi} = Constants;
-		this.getCourseList(endPointApi);
-	}
-
-	//function to fetch endpoint api
-	//param: url
-	//return: json or error
-	getCourseList(url) {
-		fetch(url)
-		.then(response => response.json())
-		.then(data => {
-			this.getSortedArray(data);
-		})
-		.catch(error => this.setState({ error, isLoading: false }));
-	}
-
-	//function to get sorted date json list
-	//param: api data
-	//return: sorted date json list
-	getSortedArray(data) {
-		const sortedDateArray = getSortedDateAndNumberArray(data);
-		this.props.setApiData(sortedDateArray);
+		this.props.setApiData(apiConstants);
 		this.setState({
 			isLoading: false,
-		});
+		})
+	}
+
+	/* function to add new employee details
+	param: added details
+	retrun: gets new added employee details in array
+	*/
+	onSubmit(value) {
+		const newData = {
+			id : value.employeeIdValue,
+			employee_name: value.employeeNameValue,
+			employee_salary: value.employeeSalaryValue,
+			employee_age: value.employeeAgeValue,
+			profile_image: '',
+		}
+		this.props.setNewEmployeeDetails(newData);
+		this.setState({ modalShow: false});
+	}
+
+	/* function to card animation
+	param: type 0-> mouseenter, type 1-> mouseleave, value-> unique key of the card details
+	retrun: added animation to card
+	*/
+	hoverCard(type, value) {
+		if(type === 0) {
+			this.setState({
+				hoveredCard: value
+			})
+		}
+		else {
+			this.setState({
+				hoveredCard: ''
+			})
+		}
+	}
+
+	/* function to delete card
+	param: id of the employee
+	retrun: deleted new array
+	*/
+	deleteEmployeeDetails(indexValue) {
+		this.props.deleteEmployeeDetails(indexValue);
+		this.setState({
+			showDeleteSuccessMessage: true,
+		}, () => {
+			setTimeout(() =>{
+				this.setState({
+					showDeleteSuccessMessage: false
+				}) 
+		   }, 1000);
+		})
+		
 	}
 	render() {
-		const { addCardPlus, reactAssignment } = Constants;
+		const { addCardPlus, reactAssignment, EmployeeDetailsDeletedSuccessfully } = Constants;
 		const {apiData} = this.props;
 		let modalClose = () => this.setState({ modalShow: false });
 		if (this.state.isLoading) {
@@ -64,12 +103,20 @@ class App extends Component {
 						<Button variant="info" className="add-Card-Button" onClick={() => this.setState({ modalShow: true })}>{addCardPlus}</Button>
 					</Col>					
 				</Row>
+				{this.state.showDeleteSuccessMessage?
+					(
+						<div className="alert alert-success m-5" role="alert">
+						{EmployeeDetailsDeletedSuccessfully}
+					</div>
+					): null
+				}				
 				<Row className="mt-2 p-4">
-					<CardComponent apiDataArray= {apiData}/>
+					<CardComponent hoveredCard={this.state.hoveredCard} apiDataArray= {apiData} deleteEmployeeDetails={this.deleteEmployeeDetails} hoverCard={this.hoverCard}/>
 			   	</Row>
 				<ModalComponent
 					show={this.state.modalShow}
 					onHide={modalClose}
+					onSubmit={this.onSubmit}
 				/>
 				
 			</div>
@@ -87,6 +134,12 @@ const mapStateToProps = state => {
 		setApiData: data => {
 			dispatch(setApiData(data))
 		},
+		deleteEmployeeDetails: data => {
+			dispatch(deleteEmployeeDetails(data))
+		},
+		setNewEmployeeDetails: data => {
+			dispatch(setNewEmployeeDetails(data))
+		}
 	}
 }
 
