@@ -34,3 +34,15 @@ code {
   100% { transform: scale(1); }
 }
 
+.form-row {
+  margin-bottom: 10px;
+}
+
+.form-row>button {
+	display: block;
+	margin: auto;
+}
+
+.custom-card-hovered {
+	animation: pulse2 .3s 2;
+}
